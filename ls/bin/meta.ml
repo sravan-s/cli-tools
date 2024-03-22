@@ -32,8 +32,8 @@ DESCRIPTION         top
               print the allocated size of each file, in blocks
 
        --sort=WORD
-              sort by WORD instead of name: none, size, time, version,
-              extension, width
+              sort by WORD instead of name: none, size, time,
+              extension
 
        --help display this help and exit
 

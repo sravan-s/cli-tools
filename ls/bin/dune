@@ -1,4 +1,4 @@
 (executable
  (public_name ls)
  (name main)
- (libraries ls))
+ (libraries ls unix))
