@@ -19,7 +19,7 @@
  (name ls)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends (ocaml(="5.1.1")) dune)
+ (depends (ocaml(="5.1.1")) dune (ppx_deriving(="5.2.1")))
  (tags
   (topics "to describe" your project)))
 

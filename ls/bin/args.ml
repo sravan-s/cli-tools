@@ -1,26 +1,30 @@
 type filter_args =
   | Default_Filter_Args
   | All_Filter_Args
+  [@@deriving show]
 
 type format =
   | Default_Format
   | Inode
   | LongListing
   | Add_Size
+  [@@deriving show]
 
 type sort =
-  | Word
   | None
+  | Word
   | Time
   | Size
   | Extention
+  [@@deriving show]
 
 type args_obj = {
   mutable filter: filter_args;
   mutable format: format list;
   mutable sort: sort;
   mutable recursive: bool;
-}
+  mutable directory: string;
+} [@@deriving show]
 
 let rec exist elem lst =
   match lst with
@@ -35,9 +39,12 @@ let rec dupExist lst =
 
 let unique_strings lst =
   let compare_strings s1 s2 = String.compare s1 s2 in
-  List.sort_uniq compare_strings lst  
+  List.sort_uniq compare_strings lst
 
-let folder (accum: args_obj) (i: string): args_obj =
+type accum_type = args_obj * int * int
+
+let folder (a: accum_type) (i: string): accum_type =
+  let (accum, idx, li_len) = a in
   let new_accum = match i with
   (* filters *)
   | "-a"
@@ -68,15 +75,19 @@ let folder (accum: args_obj) (i: string): args_obj =
   | "--sort=time"-> { accum with sort = Time }
   | "--sort=EXTENSION"
   | "--sort=extension"-> { accum with sort = Extention }
-  | _ -> accum in
-  new_accum
+  | _ -> if idx + 1 == li_len then { accum with directory = i } else accum
+  in (new_accum, idx + 1, li_len)
 
 let create_params (li: string list): args_obj =
   (* ('acc -> 'a -> 'acc) -> 'acc -> 'a list -> 'acc *)
-  let accum: args_obj = {
+  let arg: args_obj = {
     filter = Default_Filter_Args;
     format = [Default_Format];
     sort = None;
     recursive = false;
+    directory = "./";
   } in
-  List.fold_left folder accum li
+  let list_length = List.length li in
+  let accum: accum_type = (arg, 0, list_length) in
+  let (a, _, _) = List.fold_left folder accum li in
+  a

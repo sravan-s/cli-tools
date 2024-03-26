@@ -8,14 +8,10 @@ SYNOPSIS         top
 
 DESCRIPTION         top
        List information about the FILEs (the current directory by
-       default).  Sort entries alphabetically if none of -cftuvSUX nor
-       --sort is specified.
+       default).
 
        for now, support single args ie -> `ls -l -a`
        ie, no support for `ls -la`
-
-       Mandatory arguments to long options are mandatory for short
-       options too.
 
        -a, --all
               do not ignore entries starting with .

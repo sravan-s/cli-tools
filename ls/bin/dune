@@ -1,4 +1,5 @@
 (executable
  (public_name ls)
  (name main)
+ (preprocess (pps ppx_deriving.show ppx_deriving.ord))
  (libraries ls unix))
