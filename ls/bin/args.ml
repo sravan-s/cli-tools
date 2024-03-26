@@ -6,8 +6,8 @@ type filter_args =
 type format =
   | Default_Format
   | Inode
-  | LongListing
   | Add_Size
+  | LongListing
   [@@deriving show]
 
 type sort =
