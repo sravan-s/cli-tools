@@ -27,17 +27,16 @@ let list_directories (args: Args.args_obj) =
   let rec loop_dir () =
     try
       let entry_name = Unix.readdir dir_handle in
-      (* fix bug here *)
-      if ((entry_name == "." || entry_name == "..") && not show_all) then
+      if ((entry_name = "." || entry_name = "..") && not show_all) then
         loop_dir()
-      else
+      else begin
         let info = Unix.stat (args.directory ^ "/" ^ entry_name) in
         dir_list := !dir_list @ [(entry_name, info)];
-        loop_dir();
+        loop_dir()
+      end
     with
       | End_of_file -> ()
-  in
-  loop_dir();
+  in loop_dir();
 
   print_result args !dir_list;
   Unix.closedir dir_handle
