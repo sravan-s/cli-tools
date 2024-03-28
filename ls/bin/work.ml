@@ -25,7 +25,7 @@ let sort_by_extention (entry_name1: string) (entry_name2: string): int =
 
 let sort_by (args: Args.args_obj) (li:info_type list) =
   let sort = args.sort in
-  ignore(print_endline (Args.show_args_obj args));
+  (* ignore(print_endline (Args.show_args_obj args)); *)
   List.sort (fun i j ->
     let (entry_name1, stats1) = i in
     let (entry_name2, stats2) = j in
@@ -59,21 +59,31 @@ let print_result (args: Args.args_obj) (li:info_type list) =
   let size_val size = if (show_size || show_long_listing) then Printf.sprintf "%8i " size else "" in
   let name_val name = Printf.sprintf "%s" name in
   List.iter (fun (name, stat) ->
-    Printf.printf "%s%s%s%s\n" (inode_val stat.Unix.st_ino) (st_mtime_val stat.st_mtime) (size_val stat.st_size) (name_val name)
+    Printf.printf "%s%s%s%s\n" (inode_val stat.Unix.st_ino) (st_mtime_val stat.st_mtime) (size_val stat.st_size) (name_val name);
   ) li
 
-let list_directories (args: Args.args_obj) =
+let rec list_directories (args: Args.args_obj) =
   let dir_handle = Unix.opendir args.directory in
   let dir_list: info_type list ref = ref [] in
   let show_all = args.filter == Args.All_Filter_Args in
   let rec loop_dir () =
     try
       let entry_name = Unix.readdir dir_handle in
+      let full_path = args.directory ^ "/" ^ entry_name in
       if ((entry_name = "." || entry_name = "..") && not show_all) then
         loop_dir()
       else begin
-        let info = Unix.stat (args.directory ^ "/" ^ entry_name) in
+        let info = Unix.stat full_path in
         dir_list := !dir_list @ [(entry_name, info)];
+        (* this is lazy version..
+           ideally we should move this to a tree/stack and deal with it in print_result
+          *)
+        if args.recursive && (info.Unix.st_kind = Unix.S_DIR) then begin
+          print_endline ("->" ^ full_path);
+          let arg_new = {args with directory = full_path } in
+          list_directories arg_new;
+          print_endline ("-> .. " ^ full_path);
+        end;
         loop_dir()
       end
     with
