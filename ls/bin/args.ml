@@ -11,8 +11,7 @@ type format =
   [@@deriving show]
 
 type sort =
-  | None
-  | Word
+  | Sort_None
   | Time
   | Size
   | Extention
@@ -65,10 +64,8 @@ let folder (a: accum_type) (i: string): accum_type =
   | "-R"
   | "--recursive" -> { accum with recursive = true }
   (* Sorting *)
-  | "--sort=WORD"
-  | "--sort=word"-> { accum with sort = Word }
   | "--sort=NONE"
-  | "--sort=none"-> { accum with sort = None }
+  | "--sort=none"-> { accum with sort = Sort_None }
   | "--sort=SIZE"
   | "--sort=size"-> { accum with sort = Size }
   | "--sort=TIME"
@@ -83,7 +80,7 @@ let create_params (li: string list): args_obj =
   let arg: args_obj = {
     filter = Default_Filter_Args;
     format = [Default_Format];
-    sort = None;
+    sort = Sort_None;
     recursive = false;
     directory = "./";
   } in
