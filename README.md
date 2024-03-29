@@ -2,7 +2,7 @@
 Rewrite a bunch of CLI tools :)
 
     ls: Lists directory contents.
-    cd: Changes the current directory.
+    cd: Changes the current directory. - wont do, can only wrap `cd` from bash
     mkdir: Creates a new directory.
     rm: Removes files or directories.
     mv: Moves or renames files or directories.
