@@ -1,6 +1,5 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
 use std::{env, process::exit};
 
 const VERSION: &str = "0.0.1";
@@ -16,20 +15,24 @@ struct Options<'a> {
 }
 
 /*
-fn _canonicalize_path(p: &PathBuf, pwd: &PathBuf) -> PathBuf {
-    let start_with_dot =
-}
-*/
-
-fn make(options: Options) {
-    let _pwd = match env::current_dir() {
+fn canonicalize_path(path_str: &str) -> PathBuf {
+    let special_cases = ["./", "..", "~", "/"];
+    let pwd = match env::current_dir() {
         Ok(p) => p,
         Err(e) => {
             eprintln!("Couldnt find current path {}", e);
             exit(EXIT_FAILURE)
         }
     };
+    if special_cases.iter().any(|x| path_str.starts_with(x)) {
+        dbg!(aa)
+    } else {
+        pwd
+    }
+}
+*/
 
+fn make(options: Options) {
     let path_to_create = match options.path {
         Some(p) => p,
         None => {
@@ -41,18 +44,7 @@ fn make(options: Options) {
     if options.make_parents {
         println!("to implement");
     } else {
-        /*
-        let to_canon = path_to_create.to_string() + "/..";
-        let path = match fs::canonicalize(to_canon.clone()) {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("Couldnt canonicalize the path {}", e);
-                dbg!(to_canon);
-                exit(EXIT_FAILURE)
-            }
-        };
-        */
-        let created = match fs::create_dir("./") {
+        let created = match fs::create_dir(path_to_create) {
             Ok(_c) => fs::canonicalize(path_to_create).unwrap(),
             Err(e) => {
                 eprintln!("Couldnt craete directory {}", e);
