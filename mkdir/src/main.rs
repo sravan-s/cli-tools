@@ -151,6 +151,10 @@ fn main() {
                 exit(EXIT_FAILURE);
             }
             None => {
+                /* Creative liberty, we are only taking one path ~
+                 * Making multiple directories is easy, make params.path a Vec. call make()
+                 * multiple times
+                 * */
                 params.path = Some(&args[i]);
                 i += 1;
             }

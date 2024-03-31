@@ -26,12 +26,7 @@ DESCRIPTION
               output version information and exit
 
 
-> About path, we handle the follwoing special cases:
-
-    .. (dot-dot): Represents the parent directory.
-    ~ (tilde): Represents the user's home directory.
-    / (root): Represents the root directory.
-    . (dot): Represents the current directory.
-    (name) -> same as dot
-    example: mkdir ./new_dir = mkdir new_dir 
+> About path, we only create one directory at a time.
+For complex paths, we use PathClean
+See - https://docs.rs/path-clean/latest/path_clean/trait.PathClean.html
 
