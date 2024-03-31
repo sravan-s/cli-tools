@@ -1,6 +1,9 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
 use std::{env, process::exit};
+
+use path_clean::clean;
 
 const VERSION: &str = "0.0.1";
 const EXIT_SUCCESS: i32 = 0;
@@ -14,23 +17,33 @@ struct Options<'a> {
     path: Option<&'a str>,
 }
 
-/*
-fn canonicalize_path(path_str: &str) -> PathBuf {
-    let special_cases = ["./", "..", "~", "/"];
-    let pwd = match env::current_dir() {
-        Ok(p) => p,
-        Err(e) => {
-            eprintln!("Couldnt find current path {}", e);
-            exit(EXIT_FAILURE)
-        }
-    };
-    if special_cases.iter().any(|x| path_str.starts_with(x)) {
-        dbg!(aa)
-    } else {
-        pwd
+fn make_parents(path: &str, log: bool) -> Result<PathBuf, std::io::Error> {
+    let canon_path: PathBuf = clean(path);
+
+    if canon_path.exists() {
+        eprintln!("Directory already exists, {}", canon_path.to_str().unwrap());
+        exit(EXIT_FAILURE)
     }
+
+    let mut temp_path = PathBuf::new();
+    for component in canon_path.components() {
+        temp_path.push(component);
+        if !temp_path.exists() {
+            match fs::create_dir(temp_path.clone()) {
+                Ok(_) => {
+                    if log {
+                        println!("created dir: {}", temp_path.to_str().unwrap());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Create directory failure: {}", e);
+                    exit(EXIT_FAILURE)
+                }
+            }
+        }
+    }
+    Ok(canon_path)
 }
-*/
 
 fn make(options: Options) {
     let path_to_create = match options.path {
@@ -41,31 +54,46 @@ fn make(options: Options) {
         }
     };
 
+    let created: PathBuf;
+
     if options.make_parents {
-        println!("to implement");
+        match make_parents(path_to_create, options.verbose) {
+            Ok(p) => {
+                created = p;
+            }
+            Err(e) => {
+                eprintln!("Couldnt create directory, {}", e);
+                exit(EXIT_FAILURE)
+            }
+        };
     } else {
-        let created = match fs::create_dir(path_to_create) {
-            Ok(_c) => fs::canonicalize(path_to_create).unwrap(),
+        match fs::create_dir(path_to_create) {
+            Ok(_) => {
+                created = fs::canonicalize(path_to_create).unwrap();
+            }
             Err(e) => {
                 eprintln!("Couldnt craete directory {}", e);
                 exit(EXIT_FAILURE)
             }
         };
-        let mut permissions = fs::metadata(created.clone())
-            .expect("Failed to get metadata")
-            .permissions();
-        permissions.set_mode(options.mode);
+    }
 
-        match fs::set_permissions(created.clone(), permissions) {
-            Ok(_) => {
+    let mut permissions = fs::metadata(created.clone())
+        .expect("Failed to get metadata")
+        .permissions();
+    permissions.set_mode(options.mode);
+
+    match fs::set_permissions(created.clone(), permissions) {
+        Ok(_) => {
+            if options.verbose {
                 println!("Directory created successfully.");
                 dbg!(created);
-                exit(EXIT_SUCCESS)
             }
-            Err(e) => {
-                eprintln!("Couldnt set permissions to directory {}", e);
-                exit(EXIT_FAIL_PERMISSION)
-            }
+            exit(EXIT_SUCCESS)
+        }
+        Err(e) => {
+            eprintln!("Couldnt set permissions to directory {}", e);
+            exit(EXIT_FAIL_PERMISSION)
         }
     }
 }
