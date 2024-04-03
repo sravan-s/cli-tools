@@ -13,11 +13,23 @@ pub fn delete_node(path: PathBuf, params: Params) {
             path.to_string_lossy()
         );
 
-        let mut rl = rustyline::DefaultEditor::new().unwrap();
-        let readline = rl.readline(&msg);
-        match readline {
-            Ok(line) => println!("Line: {:?}", line),
-            Err(_) => println!("No input"),
+        let mut do_loop = true;
+        while do_loop {
+            let mut rl = rustyline::DefaultEditor::new().unwrap();
+            let readline = rl.readline(&msg);
+            match readline {
+                Ok(line) => {
+                    if line == "y" {
+                        do_loop = false;
+                    } else if line == "n" {
+                        println!("Not deleting {}", path.to_string_lossy());
+                        return;
+                    } else {
+                        println!("Unknown input {}", line);
+                    }
+                }
+                Err(_) => println!("No input"),
+            }
         }
     }
     if path.is_file() || path.is_symlink() {
@@ -26,6 +38,7 @@ pub fn delete_node(path: PathBuf, params: Params) {
                 if params.verbose {
                     println!("Removed file {}", path.to_str().unwrap());
                 }
+                return;
             }
             Err(e) => {
                 println!(

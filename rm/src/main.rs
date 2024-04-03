@@ -19,8 +19,6 @@ fn work(params: Params) {
 
     let mut rev_count = nodes.len();
     while rev_count > 0 {
-        dbg!(rev_count);
-        dbg!(nodes.clone());
         delete_node(nodes[rev_count - 1].clone(), params.clone());
         rev_count -= 1;
     }
