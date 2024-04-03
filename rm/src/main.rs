@@ -50,10 +50,6 @@ fn main() {
             params.force = true;
         } else if args[i] == "--interactive" {
             params.interactive = true;
-        } else if args[i] == "--one-file-system" {
-            params.one_file_system = true;
-        } else if args[i] == "--no-preserve-root" {
-            params.no_preserve_root = true;
         } else if args[i] == "--recursive" {
             params.recursive = true;
         } else if args[i] == "--verbose" {

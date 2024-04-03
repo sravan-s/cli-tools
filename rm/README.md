@@ -19,10 +19,6 @@ Remove (unlink) the FILE(s).
     ignore nonexistent files, never prompt 
 --interactive
     prompt before every removal 
---one-file-system
-    when removing a hierarchy recursively, skip any directory that is on a file system different from that of the corresponding command line argument 
---no-preserve-root
-    do not treat '/' specially 
 --recursive
     remove directories and their contents recursively 
 --verbose
