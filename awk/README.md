@@ -6,38 +6,11 @@ awk — pattern scanning and processing language
 
 Read -> https://www.gnu.org/software/gawk/manual/gawk.html for full specs
 
-### SYNOPSIS
+### We are implementing a subset of AWK that runs parallelly as map-reduce
 
-       awk [-F sepstring] [-v assignment]... program [argument...]
+awk -f program-file input-file1 input-file2 ...
+awk -f program-file > applies awk to stdin
 
-       awk [-F sepstring] -f progfile [-f progfile]... [-v assignment]...
-            [argument...]
-
-
-### DESCRIPTION
-
-       The awk utility shall execute programs written in the awk
-       programming language, which is specialized for textual data
-       manipulation. An awk program is a sequence of patterns and
-       corresponding actions. When input is read that matches a pattern,
-       the action associated with that pattern is carried out.
-
-       Input shall be interpreted as a sequence of records. By default,
-       a record is a line, less its terminating <newline>, but this can
-       be changed by using the RS built-in variable. Each record of
-       input shall be matched in turn against each pattern in the
-       program. For each pattern matched, the associated action shall be
-       executed.
-
-       The awk utility shall interpret each input record as a sequence
-       of fields where, by default, a field is a string of non-<blank>
-       non-<newline> characters. This default <blank> and <newline>
-       field delimiter can be changed by using the FS built-in variable
-       or the -F sepstring option. The awk utility shall denote the
-       first field in a record $1, the second $2, and so on. The symbol
-       $0 shall refer to the entire record; setting any other field
-       causes the re-evaluation of $0. Assigning to $0 shall reset the
-       values of all other fields and the NF built-in variable.
-
-
+See grammar.md to see syntax of awk programs
+Maybe I will scope down while implementing
 
