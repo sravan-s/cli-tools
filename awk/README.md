@@ -11,6 +11,18 @@ Read -> https://www.gnu.org/software/gawk/manual/gawk.html for full specs
 awk -f program-file input-file1 input-file2 ...
 awk -f program-file > applies awk to stdin
 
-See grammar.md to see syntax of awk programs
-Maybe I will scope down while implementing
+See ./grammar.md to see syntax of awk programs
+See https://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html#tab41 for operator precedence
 
+#### Scoped out
+- regexes
+- Syntax sugar
+    AddAssign +=
+    SubAssign -=
+    MulAssign *=
+    DivAssign /=
+    ModAssign %=
+    PowAssign ^=
+    Inc ++
+    Dec --
+- Code comments

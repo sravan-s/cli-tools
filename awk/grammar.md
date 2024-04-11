@@ -128,7 +128,7 @@ terminated_statement : action newline_opt
                  | ';' newline_opt
                  | terminatable_statement NEWLINE newline_opt
                  | terminatable_statement ';'     newline_opt
-                 ;
+    ;
 
 
 unterminated_statement : terminatable_statement
