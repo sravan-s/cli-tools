@@ -1,5 +1,6 @@
-use std::{char};
+use std::char;
 
+#[derive(Debug)]
 pub enum Token {
     // Identifier(Identifier),
     Name(Vec<char>),
@@ -48,68 +49,48 @@ pub enum Token {
     System,
     Getline,
     // Operator - OneCharOperator(OneCharOperator),
-    Add, // '+'
+    Add,       // '+'
     Substract, // '-'
-    Multiply, // '*'
-    Divide, // '/'
-    Modulus, // '%'
-    RaiseTo, // ^
-    Colon, // ':'
-    Tilde, // '~'
-    Dollar, // '$'
-    Question, // '?'
+    Multiply,  // '*'
+    Divide,    // '/'
+    Modulus,   // '%'
+    RaiseTo,   // ^
+    Colon,     // ':'
+    Tilde,     // '~'
+    Dollar,    // '$'
+    Question,  // '?'
     // these can be combined with other operator to form a two char operator
-    Invert,  // !
-    LessThan, // '<'
+    Invert,      // !
+    LessThan,    // '<'
     GreaterThan, // '>'
-    Bar, // '|'
-    Equal, // '='
+    Bar,         // '|'
+    Equal,       // '='
     // Operator - TwoCharOperator(TwoCharOperator),
-    Or, // '||'
-    And, // '&&'
+    Or,      // '||'
+    And,     // '&&'
     NoMatch, // '!='
-    Eq, // '=='
-    Le, // '<='
-    Ge, // '>='
+    Eq,      // '=='
+    Le,      // '<='
+    Ge,      // '>='
     // Seperator(Seperator),
-    OpenCurlyBrace, // '{'
-    CloseCurlyBrace, // '}'
-    OpenBrace, // '('
-    CloseBrace, // ')'
-    OpenSquareBrace, // '['
+    OpenCurlyBrace,   // '{'
+    CloseCurlyBrace,  // '}'
+    OpenBrace,        // '('
+    CloseBrace,       // ')'
+    OpenSquareBrace,  // '['
     CloseSquareBrace, // ']'
-    Comma, // ','
-    SemiColon, // ';'
-    Newline, // '\n'
+    Comma,            // ','
+    SemiColon,        // ';'
+    Newline,          // '\n'
 
     Unknown,
     WhiteSpace,
 }
 
-pub fn tokenizer(input: String) -> Vec<Token> {
-    let mut chars = input.chars();
-    let mut tokens: Vec<Token> = vec![];
-
-    let mut partial: Vec<char> = vec![];
-    while let Some(current) = chars.next() {
-        let lookup_result = lookup(current, partial);
-        if let Some(token) = lookup_result.token {
-            if let Some(prev_token) = lookup_result.prev {
-                tokens.push(prev_token);
-            }
-            tokens.push(token);
-            partial = vec![];
-        } else {
-            partial = lookup_result.partial;
-        }
-    }
-    tokens
-}
-
 fn is_delimiter_token(c: char) -> Option<Token> {
     match c {
         // Seperator(Seperator),
-        '{' =>  Some(Token::OpenCurlyBrace),
+        '{' => Some(Token::OpenCurlyBrace),
         '}' => Some(Token::CloseCurlyBrace),
         '(' => Some(Token::OpenBrace),
         ')' => Some(Token::CloseBrace),
@@ -185,23 +166,30 @@ fn deduce_partial(prev: Vec<char>) -> Option<Token> {
         "==" => Some(Token::Eq),
         "<=" => Some(Token::Le),
         ">=" => Some(Token::Ge),
+        // Single pasangai
+        "!" => Some(Token::Invert),
+        "<" => Some(Token::LessThan),
+        ">" => Some(Token::GreaterThan),
+        "|" => Some(Token::Bar),
+        "=" => Some(Token::Equal),
         _ => None,
     };
 
     match is_builtin {
-        Some(token) => return Some(token),
+        Some(token) => Some(token),
         None => {
             if let Ok(num_parsed) = str.parse::<i64>() {
                 return Some(Token::Number(num_parsed));
             }
 
             let identifier = str.chars().all(|c| char::is_alphabetic(c) || c == '_');
-            if identifier {
+            if identifier && !prev.is_empty() {
                 return Some(Token::Name(prev));
             }
 
-            return Some(Token::Unknown);
-        },
+            println!("unknwon: {}", str);
+            Some(Token::Unknown)
+        }
     }
 }
 
@@ -220,11 +208,33 @@ pub fn lookup(current: char, partial: Vec<char>) -> LookupResult {
     match is_delimiter {
         Some(token) => {
             result.token = Some(token);
-            result.prev = deduce_partial(partial);
-        },
+            if !partial.is_empty() {
+                result.prev = deduce_partial(partial);
+            }
+        }
         None => {
             result.partial.push(current);
         }
     }
     result
+}
+
+pub fn tokenize(input: String) -> Vec<Token> {
+    let mut chars = input.chars();
+    let mut tokens: Vec<Token> = vec![];
+
+    let mut partial: Vec<char> = vec![];
+    while let Some(current) = chars.next() {
+        let lookup_result = lookup(current, partial);
+        if let Some(token) = lookup_result.token {
+            if let Some(prev_token) = lookup_result.prev {
+                tokens.push(prev_token);
+            }
+            tokens.push(token);
+            partial = vec![];
+        } else {
+            partial = lookup_result.partial;
+        }
+    }
+    tokens
 }
