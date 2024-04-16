@@ -1,0 +1,54 @@
+---
+source: src/lexer.rs
+expression: lexed_3
+---
+[
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  {
+    "Name": [
+      "s",
+      "u",
+      "m"
+    ]
+  },
+  "WhiteSpace",
+  "Add",
+  "Equal",
+  "WhiteSpace",
+  "Dollar",
+  {
+    "Number": 1
+  },
+  "Newline",
+  "CloseCurlyBrace",
+  "Newline",
+  "End",
+  "WhiteSpace",
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "Print",
+  "WhiteSpace",
+  {
+    "Literal": [
+      "S",
+      "u",
+      "m",
+      ":"
+    ]
+  },
+  "Comma",
+  "WhiteSpace",
+  {
+    "Name": [
+      "s",
+      "u",
+      "m"
+    ]
+  },
+  "Newline",
+  "CloseCurlyBrace",
+  "Newline"
+]

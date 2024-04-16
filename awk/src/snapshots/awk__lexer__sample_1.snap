@@ -1,0 +1,18 @@
+---
+source: src/lexer.rs
+expression: lexed_1
+---
+[
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "Print",
+  "WhiteSpace",
+  "Dollar",
+  {
+    "Number": 1
+  },
+  "Newline",
+  "CloseCurlyBrace",
+  "Newline"
+]

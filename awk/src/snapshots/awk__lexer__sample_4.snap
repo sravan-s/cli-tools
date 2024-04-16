@@ -1,0 +1,212 @@
+---
+source: src/lexer.rs
+expression: lexed_4
+---
+[
+  "Function",
+  "WhiteSpace",
+  {
+    "Name": [
+      "d",
+      "o",
+      "u",
+      "b",
+      "l",
+      "e"
+    ]
+  },
+  "OpenBrace",
+  {
+    "Name": [
+      "x"
+    ]
+  },
+  "CloseBrace",
+  "WhiteSpace",
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "Return",
+  "WhiteSpace",
+  {
+    "Name": [
+      "x"
+    ]
+  },
+  "WhiteSpace",
+  "Multiply",
+  "WhiteSpace",
+  {
+    "Number": 2
+  },
+  "Newline",
+  "CloseCurlyBrace",
+  "Newline",
+  "Newline",
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "If",
+  "WhiteSpace",
+  "OpenBrace",
+  "OpenBrace",
+  "Dollar",
+  {
+    "Number": 1
+  },
+  "WhiteSpace",
+  "Modulus",
+  "WhiteSpace",
+  {
+    "Number": 2
+  },
+  "CloseBrace",
+  "WhiteSpace",
+  "Eq",
+  "WhiteSpace",
+  {
+    "Number": 0
+  },
+  "CloseBrace",
+  "WhiteSpace",
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "Print",
+  "WhiteSpace",
+  {
+    "Literal": [
+      "N",
+      "u",
+      "m",
+      "b",
+      "e",
+      "r",
+      " ",
+      "i",
+      "s",
+      " ",
+      "g",
+      "r",
+      "e",
+      "a",
+      "t",
+      "e",
+      "r",
+      " ",
+      "t",
+      "h",
+      "a",
+      "n",
+      " ",
+      "1",
+      "0"
+    ]
+  },
+  "SemiColon",
+  "Newline",
+  "WhiteSpace",
+  "CloseCurlyBrace",
+  "WhiteSpace",
+  "Else",
+  "WhiteSpace",
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "Print",
+  "WhiteSpace",
+  {
+    "Literal": [
+      "N",
+      "u",
+      "m",
+      "b",
+      "e",
+      "r",
+      " ",
+      "i",
+      "s",
+      " ",
+      "l",
+      "e",
+      "s",
+      "s",
+      " ",
+      "t",
+      "h",
+      "a",
+      "n",
+      " ",
+      "o",
+      "r",
+      " ",
+      "e",
+      "q",
+      "u",
+      "a",
+      "l",
+      " ",
+      "t",
+      "o",
+      " ",
+      "1",
+      "0"
+    ]
+  },
+  "SemiColon",
+  "Newline",
+  "WhiteSpace",
+  "CloseCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "Print",
+  "WhiteSpace",
+  {
+    "Literal": [
+      "D",
+      "o",
+      "u",
+      "b",
+      "l",
+      "e",
+      " ",
+      "o",
+      "f"
+    ]
+  },
+  "Comma",
+  "WhiteSpace",
+  "Dollar",
+  {
+    "Number": 1
+  },
+  "Comma",
+  "WhiteSpace",
+  {
+    "Literal": [
+      "i",
+      "s"
+    ]
+  },
+  "Comma",
+  "WhiteSpace",
+  {
+    "Name": [
+      "d",
+      "o",
+      "u",
+      "b",
+      "l",
+      "e"
+    ]
+  },
+  "OpenBrace",
+  "Dollar",
+  {
+    "Number": 1
+  },
+  "CloseBrace",
+  "Newline",
+  "CloseCurlyBrace",
+  "Newline"
+]

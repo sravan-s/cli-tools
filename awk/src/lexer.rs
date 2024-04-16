@@ -1,6 +1,8 @@
-use std::char;
+use std::{char, fs};
 
-#[derive(Debug, PartialEq, Eq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub enum Token {
     // Identifier(Identifier),
     Name(Vec<char>),
@@ -260,4 +262,40 @@ pub fn tokenize(input: String) -> Vec<Token> {
         }
     }
     tokens
+}
+
+
+#[test]
+fn test_sample_1() {
+    let sample_1 = fs::read_to_string("./tests/mocks/sample_1.awk").expect("Unable to read sample_1.txt");
+    let lexed_1 = tokenize(sample_1.clone());
+    insta::assert_compact_json_snapshot!(lexed_1);
+}
+
+#[test]
+fn test_sample_2() {
+    let sample_2 = fs::read_to_string("./tests/mocks/sample_2.awk").expect("Unable to read sample_2.txt");
+    let lexed_2 = tokenize(sample_2.clone());
+    insta::assert_compact_json_snapshot!(lexed_2);
+}
+
+#[test]
+fn test_sample_3() {
+    let sample_3 = fs::read_to_string("./tests/mocks/sample_3.awk").expect("Unable to read sample_3.txt");
+    let lexed_3 = tokenize(sample_3.clone());
+    insta::assert_compact_json_snapshot!(lexed_3);
+}
+
+#[test]
+fn test_sample_4() {
+    let sample_4 = fs::read_to_string("./tests/mocks/sample_4.awk").expect("Unable to read sample_4.txt");
+    let lexed_4 = tokenize(sample_4.clone());
+    insta::assert_compact_json_snapshot!(lexed_4);
+}
+
+#[test]
+fn test_sample_5() {
+    let sample_5 = fs::read_to_string("./tests/mocks/sample_5.awk").expect("Unable to read sample_5.txt");
+    let lexed_5 = tokenize(sample_5.clone());
+    insta::assert_compact_json_snapshot!(lexed_5);
 }

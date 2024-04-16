@@ -1,0 +1,40 @@
+---
+source: src/lexer.rs
+expression: lexed_2
+---
+[
+  "End",
+  "WhiteSpace",
+  "OpenCurlyBrace",
+  "Newline",
+  "WhiteSpace",
+  "Print",
+  "WhiteSpace",
+  {
+    "Literal": [
+      "T",
+      "o",
+      "t",
+      "a",
+      "l",
+      " ",
+      "l",
+      "i",
+      "n",
+      "e",
+      "s",
+      ":"
+    ]
+  },
+  "Comma",
+  "WhiteSpace",
+  {
+    "Name": [
+      "N",
+      "R"
+    ]
+  },
+  "Newline",
+  "CloseCurlyBrace",
+  "Newline"
+]
