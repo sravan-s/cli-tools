@@ -1,12 +1,13 @@
 use std::char;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Token {
     // Identifier(Identifier),
     Name(Vec<char>),
     Number(i64),
     // Ere(Vec<char>), scopedout~~
-    FuncName(Vec<char>),
+    FuncName(Vec<char>), // derived from Name later
+    Literal(Vec<char>),
     // Keyword(Keyword),
     Begin,
     End,
@@ -85,6 +86,7 @@ pub enum Token {
 
     Unknown,
     WhiteSpace,
+    Error,
 }
 
 fn is_delimiter_token(c: char) -> Option<Token> {
@@ -186,8 +188,6 @@ fn deduce_partial(prev: Vec<char>) -> Option<Token> {
             if identifier && !prev.is_empty() {
                 return Some(Token::Name(prev));
             }
-
-            println!("unknwon: {}", str);
             Some(Token::Unknown)
         }
     }
@@ -204,6 +204,25 @@ pub fn lookup(current: char, partial: Vec<char>) -> LookupResult {
         prev: None,
         partial: partial.clone(),
     };
+    // handle string literal
+    if partial.first() == Some(&'"') {
+        if current == '\n' {
+            result.token = Some(Token::Error);
+            return result;
+        }
+        // we donot support multiline string - scopedout
+        if current == '"' {
+            let mut cleaned_partial = partial.clone();
+            cleaned_partial.remove(0);
+            result.token = Some(Token::Literal(cleaned_partial));
+            return result;
+        } else {
+            result.partial.push(current);
+            return result;
+        }
+    }
+
+    // handle others
     let is_delimiter = is_delimiter_token(current);
     match is_delimiter {
         Some(token) => {
@@ -230,8 +249,12 @@ pub fn tokenize(input: String) -> Vec<Token> {
             if let Some(prev_token) = lookup_result.prev {
                 tokens.push(prev_token);
             }
-            tokens.push(token);
             partial = vec![];
+            // no need to add whitespace token if it is already there
+            if tokens.last() == Some(&Token::WhiteSpace) && token == Token::WhiteSpace {
+                continue;
+            }
+            tokens.push(token);
         } else {
             partial = lookup_result.partial;
         }
