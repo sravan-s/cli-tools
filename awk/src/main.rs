@@ -2,6 +2,7 @@ use std::fs;
 
 mod lexer;
 mod tokens;
+mod syntax_tree;
 
 fn main() {
     // let sample_1 = fs::read_to_string("./tests/sample_5.awk").expect("Unable to read sample_1.txt");

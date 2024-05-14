@@ -14,6 +14,10 @@ awk -f program-file > applies awk to stdin
 See ./grammar.md to see syntax of awk programs
 See https://pubs.opengroup.org/onlinepubs/9699919799/utilities/awk.html#tab41 for operator precedence
 
+### work done & Todo 
+* Upto tokenizer
+* Todo - Syntax tree from token list
+
 #### Scoped out
 - regexes
 - Syntax sugar
