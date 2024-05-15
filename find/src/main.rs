@@ -3,6 +3,7 @@ mod meta;
 use regex::bytes::Regex;
 use std::{env, process::exit, str::FromStr};
 
+use crate::find::find;
 use crate::meta::{get_help, Params, EXIT_FAILURE, EXIT_SUCCESS, VERSION};
 
 fn main() {
@@ -88,7 +89,7 @@ fn main() {
                 params.pattern = match re {
                     Ok(r) => Some(r),
                     _ => {
-                        println!("Path is not a regex");
+                        println!("Search pattern: {} is not a regex", args[i]);
                         exit(EXIT_FAILURE)
                     }
                 }
@@ -98,6 +99,7 @@ fn main() {
         }
         i += 1;
     }
-    dbg!(params.clone());
-    // work(params);
+    // uncomment to debug params
+    // dbg!(params.clone());
+    let _ = find(params);
 }
