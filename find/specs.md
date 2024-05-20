@@ -6,7 +6,7 @@ Arguments:
 
 Options:
   --hidden                     Search hidden files and directories
-  --no-ignore                  Do not respect .(git|fd)ignore files
+  --no-ignore                  Do not respect .(git)ignore files
   --ignore-case                Case-insensitive search (default: smart case)
   --follow                     Follow symbolic links
   --max-depth <depth>          Set maximum search depth (default: none)

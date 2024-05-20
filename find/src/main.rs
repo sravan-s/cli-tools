@@ -1,6 +1,7 @@
 mod find;
 mod meta;
-use regex::bytes::Regex;
+use find::convert_to_regex;
+use regex::Regex;
 use std::{env, process::exit, str::FromStr};
 
 use crate::find::find;
@@ -85,7 +86,8 @@ fn main() {
                 exit(EXIT_FAILURE)
             }
             if params.pattern.is_none() {
-                let re = Regex::from_str(&args[i]);
+                let patterns: Vec<String> = vec![args[i].to_string()];
+                let re = Regex::from_str(&convert_to_regex(patterns));
                 params.pattern = match re {
                     Ok(r) => Some(r),
                     _ => {
