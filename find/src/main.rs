@@ -1,7 +1,7 @@
 mod find;
 mod meta;
 use find::convert_to_regex;
-use regex::Regex;
+use regex::{Regex, RegexBuilder};
 use std::{env, process::exit, str::FromStr};
 
 use crate::find::find;
@@ -87,7 +87,9 @@ fn main() {
             }
             if params.pattern.is_none() {
                 let patterns: Vec<String> = vec![args[i].to_string()];
-                let re = Regex::from_str(&convert_to_regex(patterns));
+                let re = RegexBuilder::new(&convert_to_regex(patterns))
+                    .case_insensitive(params.ignore_case)
+                    .build();
                 params.pattern = match re {
                     Ok(r) => Some(r),
                     _ => {
