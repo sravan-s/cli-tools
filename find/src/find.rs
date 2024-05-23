@@ -20,13 +20,13 @@ pub fn convert_to_regex(patterns: Vec<String>) -> String {
 
 pub fn find(params: Params) -> Result<()> {
     // set path
-    let path = match params.path {
-        Some(d) => Path::new(&d).to_owned(),
+    let path = match params.clone().path {
+        Some(d) => Path::new(&d.clone()).to_owned(),
         None => env::current_dir().unwrap(),
     };
 
     // set regex
-    let matcher = match params.pattern {
+    let matcher = match params.clone().pattern {
         Some(p) => p,
         None => Regex::from_str("*")?,
     };
@@ -63,6 +63,16 @@ pub fn find(params: Params) -> Result<()> {
             }
             if matcher.is_match(&file_name_string) {
                 println!("{}", path.to_str().unwrap());
+            }
+
+            // handle max_depth
+            let depth = params.max_depth.unwrap_or(0);
+            if path.is_dir() && depth > 0 {
+                let mut params = params.clone();
+                params.max_depth = Some(depth - 1);
+                let path_str = String::from(path.to_str().unwrap_or(""));
+                params.path = Some(path_str);
+                let _ = find(params);
             }
         }
     }
