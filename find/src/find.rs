@@ -1,4 +1,9 @@
-use std::{env, fs, path::Path, str::FromStr};
+use std::{
+    env,
+    fs::{self, read_link},
+    path::Path,
+    str::FromStr,
+};
 
 use anyhow::Result;
 use regex::Regex;
@@ -71,6 +76,16 @@ pub fn find(params: Params) -> Result<()> {
                 let mut params = params.clone();
                 params.max_depth = Some(depth - 1);
                 let path_str = String::from(path.to_str().unwrap_or(""));
+                params.path = Some(path_str);
+                let _ = find(params);
+            }
+
+            // handle_symlink
+            if params.follow && path.is_symlink() && depth > 0 {
+                let mut params = params.clone();
+                params.max_depth = Some(depth - 1);
+                let target = read_link(path.clone())?;
+                let path_str = String::from(target.to_str().unwrap_or(""));
                 params.path = Some(path_str);
                 let _ = find(params);
             }
