@@ -43,6 +43,7 @@ impl App {
             items: rows,
         }
     }
+
     fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
@@ -72,6 +73,43 @@ impl App {
         self.state.select(Some(i));
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
+
+    pub fn sort_by(&mut self, sort_by: SortBy) {
+        let mut sys = System::new_all();
+        sys.refresh_all();
+        let mut rows: Vec<ProcessData> = sys
+            .processes()
+            .iter()
+            .map(|(pid, process)| ProcessData {
+                id: pid.to_string(),
+                name: process.name().to_string(),
+                memory: process.memory().to_string(),
+                cpu_usage: process.cpu_usage().to_string(),
+            })
+            .collect();
+        match sort_by {
+            SortBy::CpuAsc => rows.sort_by(|r1, r2| r1.cpu_usage.cmp(&r2.cpu_usage)),
+            SortBy::CpuDesc => rows.sort_by(|r1, r2| r2.cpu_usage.cmp(&r1.cpu_usage)),
+            SortBy::MemoryAsc => rows.sort_by(|r1, r2| r1.memory.cmp(&r2.memory)),
+            SortBy::MemoryDesc => rows.sort_by(|r1, r2| r2.memory.cmp(&r1.memory)),
+            SortBy::NameAsc => rows.sort_by(|r1, r2| r1.name.cmp(&r2.name)),
+            SortBy::NameDesc => rows.sort_by(|r1, r2| r2.name.cmp(&r1.name)),
+            SortBy::PidAsc => rows.sort_by(|r1, r2| r1.id.cmp(&r2.id)),
+            SortBy::PidDesc => rows.sort_by(|r1, r2| r2.id.cmp(&r1.id)),
+        }
+        self.items = rows;
+    }
+}
+
+enum SortBy {
+    CpuAsc,
+    CpuDesc,
+    MemoryAsc,
+    MemoryDesc,
+    NameAsc,
+    NameDesc,
+    PidAsc,
+    PidDesc,
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
@@ -85,6 +123,14 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     Char('q') | Esc => return Ok(()),
                     Char('j') | Down => app.next(),
                     Char('k') | Up => app.previous(),
+                    Char('c') => app.sort_by(SortBy::CpuAsc),
+                    Char('C') => app.sort_by(SortBy::CpuDesc),
+                    Char('m') => app.sort_by(SortBy::MemoryAsc),
+                    Char('M') => app.sort_by(SortBy::MemoryDesc),
+                    Char('n') => app.sort_by(SortBy::NameAsc),
+                    Char('N') => app.sort_by(SortBy::NameDesc),
+                    Char('p') => app.sort_by(SortBy::PidAsc),
+                    Char('P') => app.sort_by(SortBy::PidDesc),
                     _ => {}
                 }
             }
@@ -113,6 +159,14 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .style(Style::new().bold())
         .bottom_margin(1);
 
+    let footer = Row::new(vec![
+        "(k)ill",
+        "Sort: (c/C)pu, (m/M), (n/N), (p/P)",
+        "(g)rep by name/pid",
+    ])
+    .style(Style::new().bold())
+    .top_margin(1);
+
     let widths = [
         Constraint::Length(20),
         Constraint::Length(40),
@@ -123,6 +177,7 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .column_spacing(1)
         .style(Style::new().blue())
         .header(header)
+        .footer(footer)
         .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
         .highlight_symbol(">>");
 
