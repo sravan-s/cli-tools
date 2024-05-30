@@ -1,4 +1,4 @@
-use std::{error::Error, io};
+use std::{cmp::Ordering, error::Error, io, process::{Command, Output}};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
@@ -6,13 +6,13 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, widgets::*};
-use sysinfo::System;
+use sysinfo::{Pid, System};
 
 struct ProcessData {
-    id: String,
+    id: Pid,
     name: String,
-    memory: String,
-    cpu_usage: String,
+    memory: u64,
+    cpu_usage: f32,
 }
 
 struct App {
@@ -31,10 +31,10 @@ impl App {
             .processes()
             .iter()
             .map(|(pid, process)| ProcessData {
-                id: pid.to_string(),
+                id: pid.clone(),
                 name: process.name().to_string(),
-                memory: process.memory().to_string(),
-                cpu_usage: process.cpu_usage().to_string(),
+                memory: process.memory(),
+                cpu_usage: process.cpu_usage(),
             })
             .collect();
         Self {
@@ -81,15 +81,15 @@ impl App {
             .processes()
             .iter()
             .map(|(pid, process)| ProcessData {
-                id: pid.to_string(),
+                id: pid.clone(),
                 name: process.name().to_string(),
-                memory: process.memory().to_string(),
-                cpu_usage: process.cpu_usage().to_string(),
+                memory: process.memory(),
+                cpu_usage: process.cpu_usage(),
             })
             .collect();
         match sort_by {
-            SortBy::CpuAsc => rows.sort_by(|r1, r2| r1.cpu_usage.cmp(&r2.cpu_usage)),
-            SortBy::CpuDesc => rows.sort_by(|r1, r2| r2.cpu_usage.cmp(&r1.cpu_usage)),
+            SortBy::CpuAsc => rows.sort_by(|r1, r2| r1.cpu_usage.partial_cmp(&r2.cpu_usage).unwrap_or(Ordering::Equal)),
+            SortBy::CpuDesc => rows.sort_by(|r1, r2| r2.cpu_usage.partial_cmp(&r1.cpu_usage).unwrap_or(Ordering::Equal)),
             SortBy::MemoryAsc => rows.sort_by(|r1, r2| r1.memory.cmp(&r2.memory)),
             SortBy::MemoryDesc => rows.sort_by(|r1, r2| r2.memory.cmp(&r1.memory)),
             SortBy::NameAsc => rows.sort_by(|r1, r2| r1.name.cmp(&r2.name)),
@@ -98,6 +98,27 @@ impl App {
             SortBy::PidDesc => rows.sort_by(|r1, r2| r2.id.cmp(&r1.id)),
         }
         self.items = rows;
+    }
+
+    pub fn kill(&mut self) {
+        let selected_idex = match self.state.selected() {
+            Some(i) => i,
+            _ => {
+                return;
+            }
+        };
+        let process_to_kill = match self.items.get(selected_idex) {
+            Some(p) => p.id.clone(),
+            _ => {
+                return;
+            }
+        };
+        let _output = Command::new("kill")
+            .arg("-9")
+            .arg(process_to_kill.to_string())
+            .output()
+            .expect("Failed to execute kill command");
+        self.items.remove(selected_idex);
     }
 }
 
@@ -121,8 +142,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                 use KeyCode::*;
                 match key.code {
                     Char('q') | Esc => return Ok(()),
-                    Char('j') | Down => app.next(),
-                    Char('k') | Up => app.previous(),
+                    Down => app.next(),
+                    Up => app.previous(),
                     Char('c') => app.sort_by(SortBy::CpuAsc),
                     Char('C') => app.sort_by(SortBy::CpuDesc),
                     Char('m') => app.sort_by(SortBy::MemoryAsc),
@@ -131,6 +152,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     Char('N') => app.sort_by(SortBy::NameDesc),
                     Char('p') => app.sort_by(SortBy::PidAsc),
                     Char('P') => app.sort_by(SortBy::PidDesc),
+                    Char('k') | Char('K') => app.kill(),
                     _ => {}
                 }
             }
@@ -149,10 +171,10 @@ fn ui(f: &mut Frame, app: &mut App) {
 fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
     let rows = app.items.iter().map(|i| {
         Row::new(vec![
-            i.id.clone(),
-            i.name.clone(),
-            i.memory.clone(),
-            i.cpu_usage.clone(),
+            i.id.to_string(),
+            i.name.to_string(),
+            i.memory.to_string(),
+            i.cpu_usage.to_string(),
         ])
     });
     let header = Row::new(vec!["process_id", "name", "memory_usage", "cpu_usage"])
