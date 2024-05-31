@@ -173,12 +173,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 fn ui(f: &mut Frame, app: &mut App) {
     let rects = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(33), Constraint::Percentage(66)])
+        .constraints(vec![Constraint::Length(12), Constraint::Fill(1),  Constraint::Length(3)])
         .split(f.size());
 
     render_top_panel(f, app, rects[0]);
     render_table(f, app, rects[1]);
     render_scrollbar(f, app, rects[1]);
+    render_footer(f, rects[2]);
 }
 
 fn render_top_panel(f: &mut Frame, app: &mut App, area: Rect) {
@@ -202,6 +203,14 @@ fn render_top_panel(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(Paragraph::new(lines).block(Block::bordered()), area);
 }
 
+fn render_footer(f: &mut Frame, area: Rect) {
+    let lines = Span::from("(k)ill; Sortby: <(p/P)rocessId (n/N)ame (m/M)memory (c/C)pu>; (q)uit; (g)rep by name/pid")
+        .style(Style::default().add_modifier(Modifier::REVERSED))
+        .style(Style::new().bold())
+        .style(Style::new().fg(Color::Yellow));
+    f.render_widget(Paragraph::new(lines).block(Block::bordered()), area);
+}
+
 fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
     let rows = app.items.iter().map(|i| {
         Row::new(vec![
@@ -215,14 +224,6 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .style(Style::new().bold())
         .bottom_margin(1);
 
-    let footer = Row::new(vec![
-        "(k)ill",
-        "Sort: (c/C)pu, (m/M), (n/N), (p/P)",
-        "(g)rep by name/pid",
-    ])
-    .style(Style::new().bold())
-    .top_margin(1);
-
     let widths = [
         Constraint::Length(20),
         Constraint::Length(40),
@@ -233,7 +234,6 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .column_spacing(1)
         .style(Style::new().blue())
         .header(header)
-        .footer(footer)
         .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
         .highlight_symbol(">>");
 
@@ -255,8 +255,6 @@ fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    /*
-     */
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
