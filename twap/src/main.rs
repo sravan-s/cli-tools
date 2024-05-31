@@ -18,6 +18,7 @@ struct ProcessData {
 struct App {
     state: TableState,
     items: Vec<ProcessData>,
+    sys: System,
     scroll_state: ScrollbarState,
 }
 
@@ -41,6 +42,7 @@ impl App {
             state: TableState::default().with_selected(0),
             scroll_state: ScrollbarState::new((rows.len() - 1) * ITEM_HEIGHT),
             items: rows,
+            sys,
         }
     }
 
@@ -169,11 +171,35 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui(f: &mut Frame, app: &mut App) {
-    let rects = Layout::vertical([Constraint::Min(5), Constraint::Length(3)]).split(f.size());
+    let rects = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(33), Constraint::Percentage(66)])
+        .split(f.size());
 
-    render_table(f, app, rects[0]);
+    render_top_panel(f, app, rects[0]);
+    render_table(f, app, rects[1]);
+    render_scrollbar(f, app, rects[1]);
+}
 
-    render_scrollbar(f, app, rects[0]);
+fn render_top_panel(f: &mut Frame, app: &mut App, area: Rect) {
+    let lines: Vec<Line> = vec![
+        format!("System information:"),
+        format!("total_memory {}", app.sys.total_memory()),
+        // RAM and swap information:
+        format!("used memory : {} bytes", app.sys.used_memory()),
+        format!("total swap  : {} bytes", app.sys.total_swap()),
+        format!("used swap   : {} bytes", app.sys.used_swap()),
+
+        // Display system information:
+        format!("System name:             {:?}", System::name().unwrap()),
+        format!("System kernel version:   {:?}", System::kernel_version().unwrap()),
+        format!("System OS version:       {:?}", System::os_version().unwrap()),
+        format!("System host name:        {:?}", System::host_name().unwrap()),
+
+        // Number of CPUs:
+        format!("NB CPUs: {}", app.sys.cpus().len()),
+    ].iter().map(|l| Line::from(l.to_string())).collect();
+    f.render_widget(Paragraph::new(lines).block(Block::bordered()), area);
 }
 
 fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
@@ -230,23 +256,7 @@ fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
 
 fn main() -> Result<(), Box<dyn Error>> {
     /*
-    println!("=> system:");
-    // RAM and swap information:
-    println!("total memory: {} bytes", sys.total_memory());
-    println!("used memory : {} bytes", sys.used_memory());
-    println!("total swap  : {} bytes", sys.total_swap());
-    println!("used swap   : {} bytes", sys.used_swap());
-
-    // Display system information:
-    println!("System name:             {:?}", System::name());
-    println!("System kernel version:   {:?}", System::kernel_version());
-    println!("System OS version:       {:?}", System::os_version());
-    println!("System host name:        {:?}", System::host_name());
-
-    // Number of CPUs:
-    println!("NB CPUs: {}", sys.cpus().len());
-
-    */
+     */
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
