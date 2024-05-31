@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, error::Error, io, process::{Command, Output}};
+use std::{cmp::Ordering, error::Error, io, process::Command};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
@@ -31,7 +31,7 @@ impl App {
             .processes()
             .iter()
             .map(|(pid, process)| ProcessData {
-                id: pid.clone(),
+                id: *pid,
                 name: process.name().to_string(),
                 memory: process.memory(),
                 cpu_usage: process.cpu_usage(),
@@ -81,15 +81,23 @@ impl App {
             .processes()
             .iter()
             .map(|(pid, process)| ProcessData {
-                id: pid.clone(),
+                id: *pid,
                 name: process.name().to_string(),
                 memory: process.memory(),
                 cpu_usage: process.cpu_usage(),
             })
             .collect();
         match sort_by {
-            SortBy::CpuAsc => rows.sort_by(|r1, r2| r1.cpu_usage.partial_cmp(&r2.cpu_usage).unwrap_or(Ordering::Equal)),
-            SortBy::CpuDesc => rows.sort_by(|r1, r2| r2.cpu_usage.partial_cmp(&r1.cpu_usage).unwrap_or(Ordering::Equal)),
+            SortBy::CpuAsc => rows.sort_by(|r1, r2| {
+                r1.cpu_usage
+                    .partial_cmp(&r2.cpu_usage)
+                    .unwrap_or(Ordering::Equal)
+            }),
+            SortBy::CpuDesc => rows.sort_by(|r1, r2| {
+                r2.cpu_usage
+                    .partial_cmp(&r1.cpu_usage)
+                    .unwrap_or(Ordering::Equal)
+            }),
             SortBy::MemoryAsc => rows.sort_by(|r1, r2| r1.memory.cmp(&r2.memory)),
             SortBy::MemoryDesc => rows.sort_by(|r1, r2| r2.memory.cmp(&r1.memory)),
             SortBy::NameAsc => rows.sort_by(|r1, r2| r1.name.cmp(&r2.name)),
@@ -108,7 +116,7 @@ impl App {
             }
         };
         let process_to_kill = match self.items.get(selected_idex) {
-            Some(p) => p.id.clone(),
+            Some(p) => p.id,
             _ => {
                 return;
             }
