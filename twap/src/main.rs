@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, error::Error, io, process::Command};
+use std::{cmp::Ordering, error::Error, io, process::Command, vec};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
@@ -6,7 +6,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, widgets::*};
-use sysinfo::{Pid, System};
+use sysinfo::{CpuRefreshKind, Pid, RefreshKind, System};
 
 struct ProcessData {
     id: Pid,
@@ -173,41 +173,98 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 fn ui(f: &mut Frame, app: &mut App) {
     let rects = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Length(12), Constraint::Fill(1),  Constraint::Length(3)])
+        .constraints(vec![
+            Constraint::Length(12),
+            Constraint::Fill(1),
+            Constraint::Length(3),
+        ])
         .split(f.size());
 
-    render_top_panel(f, app, rects[0]);
+    let top_split = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Percentage(33), Constraint::Percentage(67)])
+        .split(rects[0]);
+
+    // render_top_chart(f, top_split[1]);
+    render_top_panel(f, app, top_split[0]);
     render_table(f, app, rects[1]);
     render_scrollbar(f, app, rects[1]);
     render_footer(f, rects[2]);
 }
 
+fn _render_top_chart(f: &mut Frame, area: Rect) {
+    let mut s =
+        System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
+
+    // Wait a bit because CPU usage is based on diff.
+    std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL * 4);
+    // Refresh CPUs again.
+    s.refresh_cpu();
+
+    let cpu_data: Vec<(&str, u64)> = s
+        .cpus()
+        .iter()
+        .map(|c| (c.name(), c.cpu_usage() as u64))
+        .collect();
+    let barchart = BarChart::default()
+        .block(
+            Block::bordered()
+                .title("CPU usage")
+                .title_style(Style::new().cyan()),
+        )
+        .bar_style(Style::new().yellow().on_red())
+        .value_style(Style::new().red().bold())
+        .label_style(Style::new().white())
+        .data(&cpu_data)
+        .bar_width(5)
+        .max(100);
+    f.render_widget(barchart, area);
+}
+
 fn render_top_panel(f: &mut Frame, app: &mut App, area: Rect) {
     let lines: Vec<Line> = vec![
-        format!("System information:"),
-        format!("total_memory {}", app.sys.total_memory()),
+        format!("total_memory: {}", app.sys.total_memory()),
         // RAM and swap information:
         format!("used memory : {} bytes", app.sys.used_memory()),
         format!("total swap  : {} bytes", app.sys.total_swap()),
         format!("used swap   : {} bytes", app.sys.used_swap()),
-
         // Display system information:
         format!("System name:             {:?}", System::name().unwrap()),
-        format!("System kernel version:   {:?}", System::kernel_version().unwrap()),
-        format!("System OS version:       {:?}", System::os_version().unwrap()),
-        format!("System host name:        {:?}", System::host_name().unwrap()),
-
+        format!(
+            "System kernel version:   {:?}",
+            System::kernel_version().unwrap()
+        ),
+        format!(
+            "System OS version:       {:?}",
+            System::os_version().unwrap()
+        ),
+        format!(
+            "System host name:        {:?}",
+            System::host_name().unwrap()
+        ),
         // Number of CPUs:
-        format!("NB CPUs: {}", app.sys.cpus().len()),
-    ].iter().map(|l| Line::from(l.to_string())).collect();
-    f.render_widget(Paragraph::new(lines).block(Block::bordered()), area);
+        format!("Number of CPUs: {}", app.sys.cpus().len()),
+    ]
+    .iter()
+    .map(|l| Line::from(l.to_string()).style(Style::new().on_green()))
+    .collect();
+    f.render_widget(
+        Paragraph::new(lines).block(
+            Block::bordered()
+                .title("System Information")
+                .title_style(Style::new().on_cyan()),
+        ),
+        area,
+    );
 }
 
 fn render_footer(f: &mut Frame, area: Rect) {
-    let lines = Span::from("(k)ill; Sortby: <(p/P)rocessId (n/N)ame (m/M)memory (c/C)pu>; (q)uit; (g)rep by name/pid")
-        .style(Style::default().add_modifier(Modifier::REVERSED))
-        .style(Style::new().bold())
-        .style(Style::new().fg(Color::Yellow));
+    let lines = Span::from(
+        "(k)ill; Sortby: <(p/P)rocessId (n/N)ame (m/M)memory (c/C)pu>; (q)uit; (g)rep by name/pid",
+    )
+    .style(Style::default().add_modifier(Modifier::REVERSED))
+    .style(Style::new().bold())
+    .style(Style::new().fg(Color::Yellow));
     f.render_widget(Paragraph::new(lines).block(Block::bordered()), area);
 }
 
@@ -235,6 +292,11 @@ fn render_table(f: &mut Frame, app: &mut App, area: Rect) {
         .style(Style::new().blue())
         .header(header)
         .highlight_style(Style::new().add_modifier(Modifier::REVERSED))
+        .block(
+            Block::bordered()
+                .title("Process List")
+                .title_style(Style::new().on_cyan()),
+        )
         .highlight_symbol(">>");
 
     f.render_stateful_widget(table, area, &mut app.state);
