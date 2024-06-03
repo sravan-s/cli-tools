@@ -6,7 +6,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, widgets::*};
-use sysinfo::{CpuRefreshKind, Pid, RefreshKind, System};
+use sysinfo::{Cpu, CpuRefreshKind, Pid, RefreshKind, System};
 
 struct ProcessData {
     id: Pid,
@@ -15,11 +15,17 @@ struct ProcessData {
     cpu_usage: f32,
 }
 
+struct TwapCpu {
+    id: String,
+    usage: u64,
+}
+
 struct App {
     state: TableState,
     items: Vec<ProcessData>,
     sys: System,
     scroll_state: ScrollbarState,
+    cpus: Vec<TwapCpu>,
 }
 
 const ITEM_HEIGHT: usize = 4;
@@ -38,10 +44,20 @@ impl App {
                 cpu_usage: process.cpu_usage(),
             })
             .collect();
+        let cpus: Vec<TwapCpu> = sys
+            .cpus()
+            .iter()
+            .map(|c| TwapCpu {
+                id: c.name().to_string(),
+                usage: c.cpu_usage() as u64,
+            })
+            .collect();
+
         Self {
             state: TableState::default().with_selected(0),
             scroll_state: ScrollbarState::new((rows.len() - 1) * ITEM_HEIGHT),
             items: rows,
+            cpus,
             sys,
         }
     }
@@ -185,14 +201,15 @@ fn ui(f: &mut Frame, app: &mut App) {
         .constraints(vec![Constraint::Percentage(33), Constraint::Percentage(67)])
         .split(rects[0]);
 
-    // render_top_chart(f, top_split[1]);
+    render_top_chart(f, app, top_split[1]);
     render_top_panel(f, app, top_split[0]);
     render_table(f, app, rects[1]);
     render_scrollbar(f, app, rects[1]);
     render_footer(f, rects[2]);
 }
 
-fn _render_top_chart(f: &mut Frame, area: Rect) {
+fn render_top_chart(f: &mut Frame, app: &mut App, area: Rect) {
+    /*
     let mut s =
         System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
 
@@ -200,18 +217,15 @@ fn _render_top_chart(f: &mut Frame, area: Rect) {
     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL * 4);
     // Refresh CPUs again.
     s.refresh_cpu();
-
-    let cpu_data: Vec<(&str, u64)> = s
-        .cpus()
-        .iter()
-        .map(|c| (c.name(), c.cpu_usage() as u64))
-        .collect();
+    */
+    let cpu_data: Vec<(&str, u64)> = app.cpus.iter().map(|c| (c.id.as_str(), c.usage)).collect();
     let barchart = BarChart::default()
         .block(
             Block::bordered()
                 .title("CPU usage")
                 .title_style(Style::new().cyan()),
         )
+        .label_style(Style::new().red().on_yellow())
         .bar_style(Style::new().yellow().on_red())
         .value_style(Style::new().red().bold())
         .label_style(Style::new().white())
