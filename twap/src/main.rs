@@ -1,12 +1,29 @@
-use std::{cmp::Ordering, error::Error, io, process::Command, vec};
+use std::{cmp::Ordering, error::Error, io, process::Command, time::Duration, vec};
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
+    event::{DisableMouseCapture, EnableMouseCapture, Event, EventStream, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use futures::{future::FutureExt, select, StreamExt};
+use futures_timer::Delay;
 use ratatui::{prelude::*, widgets::*};
-use sysinfo::{Cpu, CpuRefreshKind, Pid, RefreshKind, System};
+use sysinfo::{CpuRefreshKind, Pid, RefreshKind, System};
+use tokio::{
+    sync::mpsc::{self, Receiver, Sender},
+    time::sleep,
+};
+
+enum SortBy {
+    CpuAsc,
+    CpuDesc,
+    MemoryAsc,
+    MemoryDesc,
+    NameAsc,
+    NameDesc,
+    PidAsc,
+    PidDesc,
+}
 
 struct ProcessData {
     id: Pid,
@@ -146,40 +163,89 @@ impl App {
             .expect("Failed to execute kill command");
         self.items.remove(selected_idex);
     }
+
+    pub fn update_cpus(&mut self, cpus: Vec<TwapCpu>) {
+        self.cpus = cpus;
+    }
 }
 
-enum SortBy {
-    CpuAsc,
-    CpuDesc,
-    MemoryAsc,
-    MemoryDesc,
-    NameAsc,
-    NameDesc,
-    PidAsc,
-    PidDesc,
+enum TwapInterrupt {
+    TwapKeyInterrupt(Event),
+    TwapCpuInterrupt(Vec<TwapCpu>),
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
-                use KeyCode::*;
-                match key.code {
-                    Char('q') | Esc => return Ok(()),
-                    Down => app.next(),
-                    Up => app.previous(),
-                    Char('c') => app.sort_by(SortBy::CpuAsc),
-                    Char('C') => app.sort_by(SortBy::CpuDesc),
-                    Char('m') => app.sort_by(SortBy::MemoryAsc),
-                    Char('M') => app.sort_by(SortBy::MemoryDesc),
-                    Char('n') => app.sort_by(SortBy::NameAsc),
-                    Char('N') => app.sort_by(SortBy::NameDesc),
-                    Char('p') => app.sort_by(SortBy::PidAsc),
-                    Char('P') => app.sort_by(SortBy::PidDesc),
-                    Char('k') | Char('K') => app.kill(),
-                    _ => {}
+        let (cpu_sender, mut interrupt_rx): (Sender<TwapInterrupt>, Receiver<TwapInterrupt>) =
+            mpsc::channel(32);
+        let key_sender = cpu_sender.clone();
+        tokio::spawn(async move {
+            // Wait a bit because CPU usage is based on diff.
+            // Refresh CPUs again.
+            let mut sys = System::new_with_specifics(
+                RefreshKind::new().with_cpu(CpuRefreshKind::everything()),
+            );
+            let _ = sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL).await;
+            sys.refresh_cpu();
+            let cpus: Vec<TwapCpu> = sys
+                .cpus()
+                .iter()
+                .map(|x| TwapCpu {
+                    id: x.name().to_string(),
+                    usage: x.cpu_usage() as u64,
+                })
+                .collect();
+            cpu_sender
+                .send(TwapInterrupt::TwapCpuInterrupt(cpus))
+                .await
+                .unwrap();
+        });
+
+        let mut event_stream = EventStream::new();
+        tokio::spawn(async move {
+            loop {
+                let mut event_future = event_stream.next().fuse();
+                let mut delay_future = Delay::new(Duration::from_millis(100)).fuse();
+                select! {
+                    _ = delay_future => break,
+                    maybe_event = event_future => {
+                    match maybe_event {
+                        Some(Ok(event)) => {
+                            key_sender.send(TwapInterrupt::TwapKeyInterrupt(event)).await.unwrap();
+                        }
+                        _ => break
+                    }
+                }
+                    };
+            }
+        });
+
+        while let Some(message) = interrupt_rx.recv().await {
+            match message {
+                TwapInterrupt::TwapCpuInterrupt(cpus) => {
+                    app.update_cpus(cpus);
+                }
+                TwapInterrupt::TwapKeyInterrupt(event) => {
+                    use KeyCode::*;
+                    if let Event::Key(key) = event {
+                        match key.code {
+                            Char('q') | Esc => return Ok(()),
+                            Down => app.next(),
+                            Up => app.previous(),
+                            Char('c') => app.sort_by(SortBy::CpuAsc),
+                            Char('C') => app.sort_by(SortBy::CpuDesc),
+                            Char('m') => app.sort_by(SortBy::MemoryAsc),
+                            Char('M') => app.sort_by(SortBy::MemoryDesc),
+                            Char('n') => app.sort_by(SortBy::NameAsc),
+                            Char('N') => app.sort_by(SortBy::NameDesc),
+                            Char('p') => app.sort_by(SortBy::PidAsc),
+                            Char('P') => app.sort_by(SortBy::PidDesc),
+                            Char('k') | Char('K') => app.kill(),
+                            _ => {}
+                        }
+                    }
                 }
             }
         }
@@ -210,14 +276,7 @@ fn ui(f: &mut Frame, app: &mut App) {
 
 fn render_top_chart(f: &mut Frame, app: &mut App, area: Rect) {
     /*
-    let mut s =
-        System::new_with_specifics(RefreshKind::new().with_cpu(CpuRefreshKind::everything()));
-
-    // Wait a bit because CPU usage is based on diff.
-    std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL * 4);
-    // Refresh CPUs again.
-    s.refresh_cpu();
-    */
+     */
     let cpu_data: Vec<(&str, u64)> = app.cpus.iter().map(|c| (c.id.as_str(), c.usage)).collect();
     let barchart = BarChart::default()
         .block(
@@ -330,7 +389,8 @@ fn render_scrollbar(f: &mut Frame, app: &mut App, area: Rect) {
     );
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -338,7 +398,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let store = App::new();
-    let res = run_app(&mut terminal, store);
+    let res = run_app(&mut terminal, store).await;
 
     // restore terminal
     disable_raw_mode()?;
